@@ -1,0 +1,40 @@
+@* ASP.NET MVC / Razor Pages / Blazor Server: add once to the shared layout.
+   Two auth options:
+   1. Windows-integrated auth (typical intranet): put the gateway behind IIS/ARR with Windows auth,
+      run it with AUTH_MODE=trusted-header, and leave getToken out. The widget sends cookies
+      (credentials: 'include'), IIS authenticates, the proxy forwards X-Forwarded-User.
+   2. OIDC / Entra: render a short-lived access token for the copilot audience into the page
+      (or fetch it from your own /api/copilot-token endpoint) and return it from getToken. *@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <environment include="Development">
+        <script src="http://localhost:8787/widget/fis-copilot.js"></script>
+    </environment>
+    <environment exclude="Development">
+        <script src="@Configuration["Copilot:GatewayUrl"]/widget/fis-copilot.js"></script>
+    </environment>
+</head>
+<body>
+    @RenderBody()
+
+    <script>
+        FisCopilot.init({
+            gatewayUrl: '@Configuration["Copilot:GatewayUrl"]',
+            appId: '@Configuration["Copilot:AppId"]',
+            namespace: '@Configuration["Copilot:Namespace"]',
+            title: '@Configuration["Copilot:Title"]',
+            // Option 2 only:
+            // getToken: () => fetch('/api/copilot-token', { credentials: 'same-origin' }).then(r => r.ok ? r.text() : null),
+            getContext: () => ({
+                screen: document.title,
+                controller: '@ViewContext.RouteData.Values["controller"]',
+                action: '@ViewContext.RouteData.Values["action"]'
+            })
+        });
+    </script>
+</body>
+</html>

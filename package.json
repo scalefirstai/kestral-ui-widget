@@ -1,0 +1,19 @@
+{
+  "name": "fis-support-copilot",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Embeddable production-support copilot for F&IS applications: pure-JS widget + gateway into Eliza",
+  "workspaces": [
+    "packages/widget",
+    "packages/gateway"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/widget",
+    "test": "npm test -w packages/widget && npm test -w packages/gateway",
+    "dev": "npm run build && ELIZA_MODE=mock node packages/gateway/src/server.js",
+    "lint": "node --check packages/gateway/src/*.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

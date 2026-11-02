@@ -1,0 +1,14 @@
+{
+  "apps": {
+    "eagle-star": {
+      "name": "Eagle STAR",
+      "owner": "fund-accounting",
+      "namespaces": ["fund-accounting/eagle-star", "shared"]
+    },
+    "ta-portal": {
+      "name": "Transfer Agency Portal",
+      "owner": "transfer-agency",
+      "namespaces": ["transfer-agency/ta-portal", "shared"]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support Copilot demo host</title>
+  <style>body { font-family: system-ui, sans-serif; margin: 40px; } .inline { height: 480px; width: 380px; border: 1px dashed #ccc; }</style>
+</head>
+<body>
+  <h1>Eagle STAR (demo host page)</h1>
+  <p>Floating launcher bottom-right. Run <code>npm run dev</code> and open
+     <code>http://localhost:8787/widget/</code>-hosted script from this page.</p>
+
+  <!-- Option A: zero-code embed with data attributes -->
+  <!--
+  <script src="http://localhost:8787/widget/fis-copilot.js"
+          data-gateway-url="http://localhost:8787"
+          data-app-id="eagle-star"
+          data-namespace="fund-accounting/eagle-star"
+          data-title="Eagle STAR Support" defer></script>
+  -->
+
+  <!-- Option B: programmatic init with a token and live screen context -->
+  <script src="http://localhost:8787/widget/fis-copilot.js"></script>
+  <script>
+    FisCopilot.init({
+      gatewayUrl: 'http://localhost:8787',
+      appId: 'eagle-star',
+      namespace: 'fund-accounting/eagle-star',
+      title: 'Eagle STAR Support',
+      subtitle: 'Runbooks, known issues, FAQs',
+      suggestions: ['Why did the NAV job fail?', 'How do I re-run pricing for one fund?'],
+      // Your SPA already has a token from the IdP:
+      getToken: async () => window.sessionStorage.getItem('access_token'),
+      // Tell the copilot where the user is, so answers are specific:
+      getContext: () => ({ screen: 'NAV Dashboard', fundId: 'F12345', valuationDate: '2026-11-02' }),
+      onEvent: (name, payload) => console.debug('[copilot]', name, payload),
+    });
+  </script>
+</body>
+</html>

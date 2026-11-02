@@ -1,0 +1,26 @@
+{
+  "name": "@fis/support-copilot",
+  "version": "0.1.0",
+  "description": "Pure-JavaScript embeddable support copilot widget (Shadow DOM, streaming, no runtime dependencies)",
+  "type": "module",
+  "main": "dist/fis-copilot.esm.js",
+  "module": "dist/fis-copilot.esm.js",
+  "browser": "dist/fis-copilot.js",
+  "exports": {
+    ".": {
+      "import": "./dist/fis-copilot.esm.js",
+      "default": "./dist/fis-copilot.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

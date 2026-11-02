@@ -1,0 +1,12 @@
+{
+  "name": "@fis/support-copilot-gateway",
+  "version": "0.1.0",
+  "description": "Thin gateway between the support copilot widget and Eliza: auth, CORS, app registry, rate limiting, streaming",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "ELIZA_MODE=mock AUTH_MODE=none node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
