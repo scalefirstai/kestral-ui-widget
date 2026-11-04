@@ -1,0 +1,13 @@
+{
+  "name": "@fis/knowledge-mcp-mock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mock knowledge MCP server (stdio) over an Open Knowledge Format bundle of runbooks, Confluence pages and JIRA issues",
+  "type": "module",
+  "main": "src/server.js",
+  "bin": { "fis-knowledge-mcp": "src/server.js" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}

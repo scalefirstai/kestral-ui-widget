@@ -16,14 +16,17 @@ namespace Fis.Desktop.Copilot
     {
         private readonly string _gatewayUrl;
         private readonly string _appId;
+        private readonly string _appMnemonic;                    // 3-character app code, e.g. "ESR"
         private readonly Func<Task<string?>> _getToken;          // e.g. MSAL AcquireTokenSilent for the copilot scope
-        private readonly Func<object> _getContext;               // e.g. () => new { screen = "Trade Blotter", fundId = vm.FundId }
+        private readonly Func<object> _getContext;               // e.g. () => new { screen = "Trade Blotter", fundId = vm.FundId,
+                                                                 //   error = vm.LastError == null ? null : new { code = vm.LastError.Code, message = vm.LastError.Message } }
 
-        public CopilotPane(string gatewayUrl, string appId, Func<Task<string?>> getToken, Func<object> getContext)
+        public CopilotPane(string gatewayUrl, string appId, string appMnemonic, Func<Task<string?>> getToken, Func<object> getContext)
         {
             InitializeComponent();
             _gatewayUrl = gatewayUrl.TrimEnd('/');
             _appId = appId;
+            _appMnemonic = appMnemonic;
             _getToken = getToken;
             _getContext = getContext;
             Loaded += async (_, __) => await InitAsync();
@@ -61,7 +64,7 @@ namespace Fis.Desktop.Copilot
 <style>html,body{{margin:0;height:100%}}#c{{height:100%}}</style>
 <script src='{_gatewayUrl}/widget/fis-copilot.js'></script></head>
 <body><div id='c'></div><script>
-FisCopilot.init({{ gatewayUrl: '{_gatewayUrl}', appId: '{_appId}', container: '#c' }});
+FisCopilot.init({{ gatewayUrl: '{_gatewayUrl}', appId: '{_appId}', appMnemonic: '{_appMnemonic}', container: '#c' }});
 </script></body></html>";
 
         // Widget -> host: { type: 'fis-copilot:request', id, method: 'getToken' | 'getContext' }

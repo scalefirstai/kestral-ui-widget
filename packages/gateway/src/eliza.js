@@ -4,18 +4,29 @@
 //
 // The gateway turns those into SSE for the widget, so swapping Eliza's wire format only
 // touches this file.
+//
+//   ELIZA_MODE=http    real Eliza (production). Placeholder contract below, see ADAPT HERE.
+//   ELIZA_MODE=claude  local stand-in: Claude + the knowledge MCP server (claude.js).
+//   ELIZA_MODE=mock    canned answer, no network (tests, CI, UI work).
+import { claudeEliza } from './claude.js';
+import { normalizeContext, describeContext } from './context.js';
 
-export function createEliza(cfg) {
-  return cfg.elizaMode === 'mock' ? mockEliza() : httpEliza(cfg);
+export function createEliza(cfg, opts) {
+  if (cfg.elizaMode === 'mock') return mockEliza();
+  if (cfg.elizaMode === 'claude') return claudeEliza(cfg, opts);
+  return httpEliza(cfg);
 }
 
 export function buildElizaRequest({ body, user, app, cfg }) {
   const namespace = body.namespace || body.appId;
+  const appMnemonic = body.appMnemonic || app?.mnemonic || null;
+  const context = normalizeContext(body.context, { appId: body.appId, appMnemonic });
   const system = [
-    `You are the production support copilot for the "${app?.name || body.appId}" application in BNY Fund & Investor Services.`,
+    `You are the production support copilot for the "${app?.name || body.appId}" application${appMnemonic ? ` (mnemonic ${appMnemonic})` : ''} in BNY Fund & Investor Services.`,
     `Answer from the knowledge base only. Use the "${cfg.knowledgeTool}" tools, restricted to namespace "${namespace}" and the shared platform namespace.`,
     'Cite the runbook, Confluence page or JIRA issue you used. If the knowledge base has no answer, say so and suggest who to contact; do not guess.',
     'Never instruct the user to change production data directly.',
+    'Each question comes with the user\'s screen context: application mnemonic, screen and, if present, the error on screen. When an error is present, diagnose that error first.',
   ].join('\n');
 
   return {
@@ -28,9 +39,11 @@ export function buildElizaRequest({ body, user, app, cfg }) {
     ],
     metadata: {
       appId: body.appId,
+      appMnemonic,
       namespace,
       allowedNamespaces: app?.namespaces || [namespace, 'shared'],
-      context: body.context || {},
+      context,
+      contextSummary: describeContext(context),
       client: body.client || {},
     },
     tools: { mcpServers: [cfg.knowledgeTool] },
@@ -110,9 +123,13 @@ function mockEliza() {
     async *chat(request) {
       const q = request.messages[request.messages.length - 1].content;
       const ns = request.metadata.namespace;
+      const ctx = request.metadata.context;
       const answer =
         `**Mock answer** for \`${ns}\`.\n\n` +
         `You asked: _${q.slice(0, 200)}_\n\n` +
+        `Context received: app \`${ctx.appMnemonic}\`, screen _${ctx.screen || 'unknown'}_` +
+        (ctx.error ? `, error \`${ctx.error.code || ctx.error.message}\`` : ', no error') +
+        '.\n\n' +
         '1. Check the overnight batch status in the scheduler.\n' +
         '2. If the job failed, follow the restart runbook.\n' +
         '3. Raise a JIRA in the support queue if it fails twice.';

@@ -39,6 +39,8 @@ export function buildStyles(theme) {
 header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
 header .title { font-weight: 600; flex: 1; }
 header .sub { font-size: 12px; color: var(--muted); }
+header .ctx { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+header .ctx:empty { display: none; }
 .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 6px; font-size: 16px; }
 .icon-btn:hover { color: var(--fg); background: var(--bubble-bot); }
 .messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }

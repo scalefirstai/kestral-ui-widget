@@ -6,13 +6,15 @@
 //   POST /v1/feedback            thumbs up/down
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join, normalize } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { loadConfig } from './config.js';
 import { authenticate } from './auth.js';
 import { createEliza, buildElizaRequest } from './eliza.js';
+import { isMnemonic, resolveMnemonic } from './context.js';
 
-export function createServer(cfg, { eliza = createEliza(cfg), verifyToken, log = jsonLog } = {}) {
+export function createServer(cfg, { verifyToken, log = jsonLog, eliza = createEliza(cfg, { log }) } = {}) {
   const limiter = createLimiter(cfg.rateLimitPerMin);
 
   return http.createServer(async (req, res) => {
@@ -59,6 +61,9 @@ async function handleChat({ req, res, url, body, user, cfg, eliza, log, reqId })
   if (app && body.namespace && !app.namespaces.some((n) => body.namespace === n || body.namespace.startsWith(`${n}/`))) {
     throw httpError(403, 'namespace_denied', `Namespace "${body.namespace}" is not allowed for ${body.appId}`);
   }
+  const { mnemonic, error: mnemonicError } = resolveMnemonic(body, app);
+  if (mnemonicError) throw httpError(403, 'mnemonic_mismatch', mnemonicError);
+  body.appMnemonic = mnemonic;
 
   const request = buildElizaRequest({ body, user, app, cfg });
   const started = Date.now();
@@ -71,6 +76,9 @@ async function handleChat({ req, res, url, body, user, cfg, eliza, log, reqId })
     reqId,
     user: user.userId,
     appId: body.appId,
+    appMnemonic: request.metadata.appMnemonic,
+    screen: request.metadata.context.screen,
+    errorCode: request.metadata.context.error ? request.metadata.context.error.code || 'unknown' : undefined,
     namespace: request.metadata.namespace,
     conversationId: body.conversationId,
     host: body.client?.host,
@@ -123,6 +131,10 @@ function validateChat(b) {
   if (typeof b.appId !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(b.appId)) throw httpError(400, 'bad_request', 'appId is invalid');
   if (typeof b.message !== 'string' || !b.message.trim()) throw httpError(400, 'bad_request', 'message is required');
   if (b.message.length > 4000) throw httpError(400, 'bad_request', 'message is too long');
+  if (b.appMnemonic != null && !isMnemonic(String(b.appMnemonic).toUpperCase())) {
+    throw httpError(400, 'bad_request', 'appMnemonic must be a 3-character application code');
+  }
+  if (b.context != null && (typeof b.context !== 'object' || Array.isArray(b.context))) throw httpError(400, 'bad_request', 'context must be an object');
   if (b.namespace != null && (typeof b.namespace !== 'string' || !/^[a-z0-9][a-z0-9/._-]{0,127}$/i.test(b.namespace))) {
     throw httpError(400, 'bad_request', 'namespace is invalid');
   }
@@ -212,6 +224,8 @@ function jsonLog(obj) {
 
 // Run directly: node src/server.js
 if (import.meta.url === `file://${process.argv[1]}`) {
+  // Local dev convenience: values from ./.env, without overriding variables already set in the shell.
+  if (existsSync('.env') && process.loadEnvFile) process.loadEnvFile('.env');
   const cfg = loadConfig();
   createServer(cfg).listen(cfg.port, cfg.host, () => {
     jsonLog({ event: 'listening', port: cfg.port, eliza: cfg.elizaMode, auth: cfg.authMode });

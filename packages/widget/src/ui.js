@@ -33,6 +33,8 @@ export function createUi(config, handlers) {
   const titleWrap = el('div', { style: 'flex:1' });
   titleWrap.appendChild(el('div', { class: 'title' }, config.title));
   if (config.subtitle) titleWrap.appendChild(el('div', { class: 'sub' }, config.subtitle));
+  const ctxLine = el('div', { class: 'ctx', title: 'Sent with your question' });
+  titleWrap.appendChild(ctxLine);
   header.appendChild(titleWrap);
   const resetBtn = el('button', { class: 'icon-btn', type: 'button', title: 'New conversation', 'aria-label': 'New conversation' }, '↻');
   header.appendChild(resetBtn);
@@ -105,6 +107,9 @@ export function createUi(config, handlers) {
     },
     clear() {
       messages.textContent = '';
+    },
+    setContextLabel(text) {
+      ctxLine.textContent = text ? `Context: ${text}` : '';
     },
     setSuggestions(list) {
       suggestions.textContent = '';

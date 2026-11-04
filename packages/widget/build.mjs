@@ -5,7 +5,6 @@
 import { build } from 'esbuild';
 
 const common = {
-  entryPoints: ['src/index.js'],
   bundle: true,
   minify: true,
   sourcemap: true,
@@ -13,6 +12,7 @@ const common = {
   legalComments: 'none',
 };
 
-await build({ ...common, format: 'iife', globalName: 'FisCopilot', outfile: 'dist/fis-copilot.js' });
-await build({ ...common, format: 'esm', outfile: 'dist/fis-copilot.esm.js' });
+// The IIFE entry installs window.FisCopilot itself (command function + init), so no globalName.
+await build({ ...common, entryPoints: ['src/global.js'], format: 'iife', outfile: 'dist/fis-copilot.js' });
+await build({ ...common, entryPoints: ['src/index.js'], format: 'esm', outfile: 'dist/fis-copilot.esm.js' });
 console.log('built dist/fis-copilot.js and dist/fis-copilot.esm.js');

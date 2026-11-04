@@ -2,13 +2,21 @@
   "apps": {
     "eagle-star": {
       "name": "Eagle STAR",
+      "mnemonic": "ESR",
       "owner": "fund-accounting",
-      "namespaces": ["fund-accounting/eagle-star", "shared"]
+      "namespaces": [
+        "fund-accounting/eagle-star",
+        "shared"
+      ]
     },
     "ta-portal": {
       "name": "Transfer Agency Portal",
+      "mnemonic": "TAP",
       "owner": "transfer-agency",
-      "namespaces": ["transfer-agency/ta-portal", "shared"]
+      "namespaces": [
+        "transfer-agency/ta-portal",
+        "shared"
+      ]
     }
   }
 }

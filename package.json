@@ -2,16 +2,19 @@
   "name": "fis-support-copilot",
   "private": true,
   "version": "0.1.0",
-  "description": "Embeddable production-support copilot for F&IS applications: pure-JS widget + gateway into Eliza",
+  "description": "Embeddable production-support copilot for F&IS applications: hosted pure-JS widget + gateway into Eliza (Claude + knowledge MCP stand-in for local dev)",
   "workspaces": [
     "packages/widget",
-    "packages/gateway"
+    "packages/gateway",
+    "packages/knowledge-mcp"
   ],
   "scripts": {
     "build": "npm run build -w packages/widget",
-    "test": "npm test -w packages/widget && npm test -w packages/gateway",
-    "dev": "npm run build && ELIZA_MODE=mock node packages/gateway/src/server.js",
-    "lint": "node --check packages/gateway/src/*.js"
+    "test": "npm test -w packages/widget && npm test -w packages/gateway && npm test -w packages/knowledge-mcp",
+    "dev": "npm run build && ELIZA_MODE=mock AUTH_MODE=none APP_REGISTRY=config/apps.example.json ALLOWED_ORIGINS=http://localhost:5173 node packages/gateway/src/server.js",
+    "dev:claude": "npm run build && ELIZA_MODE=claude AUTH_MODE=none APP_REGISTRY=config/apps.example.json ALLOWED_ORIGINS=http://localhost:5173 node packages/gateway/src/server.js",
+    "examples": "node scripts/serve-examples.mjs",
+    "lint": "node --check packages/gateway/src/*.js packages/knowledge-mcp/src/*.js"
   },
   "engines": {
     "node": ">=20"

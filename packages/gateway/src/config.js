@@ -1,6 +1,7 @@
 // All configuration comes from environment variables so the same build runs in dev,
 // UAT and prod. See .env.example at the repo root.
 import { readFileSync, existsSync } from 'node:fs';
+import { DEFAULT_MCP_COMMAND } from './claude.js';
 
 export function loadConfig(env = process.env) {
   const cfg = {
@@ -9,11 +10,17 @@ export function loadConfig(env = process.env) {
     allowedOrigins: list(env.ALLOWED_ORIGINS), // empty = same-origin + non-browser hosts only
     authMode: env.AUTH_MODE || 'bearer', // 'bearer' | 'trusted-header' | 'none'
     trustedUserHeader: (env.TRUSTED_USER_HEADER || 'x-forwarded-user').toLowerCase(),
-    elizaMode: env.ELIZA_MODE || 'http', // 'http' | 'mock'
+    elizaMode: env.ELIZA_MODE || 'http', // 'http' (real Eliza) | 'claude' (Claude + knowledge MCP stand-in) | 'mock'
     elizaUrl: env.ELIZA_URL || '',
     elizaApiKey: env.ELIZA_API_KEY || '',
     elizaTimeoutMs: Number(env.ELIZA_TIMEOUT_MS || 60000),
     knowledgeTool: env.KNOWLEDGE_MCP_SERVER || 'fis-knowledge', // MCP server Eliza should use for retrieval
+    // ELIZA_MODE=claude only:
+    claudeModel: env.CLAUDE_MODEL || 'claude-opus-5-5',
+    claudeEffort: env.CLAUDE_EFFORT || 'medium', // low | medium | high | xhigh | max
+    claudeMaxTurns: Number(env.CLAUDE_MAX_TURNS || 6), // model <-> tool round trips per question
+    knowledgeMcpCommand: env.KNOWLEDGE_MCP_COMMAND ? env.KNOWLEDGE_MCP_COMMAND.split(/\s+/).filter(Boolean) : DEFAULT_MCP_COMMAND,
+    knowledgeBundle: env.KNOWLEDGE_BUNDLE || '', // OKF bundle dir for the mock MCP server (default knowledge/okf)
     rateLimitPerMin: Number(env.RATE_LIMIT_PER_MIN || 30),
     maxBodyBytes: Number(env.MAX_BODY_BYTES || 64 * 1024),
     logContent: env.LOG_CONTENT === 'true', // off by default: questions may contain client data
@@ -22,6 +29,9 @@ export function loadConfig(env = process.env) {
   };
   if (cfg.elizaMode === 'http' && !cfg.elizaUrl) {
     throw new Error('ELIZA_URL is required when ELIZA_MODE=http (use ELIZA_MODE=mock for local dev)');
+  }
+  if (!['http', 'claude', 'mock'].includes(cfg.elizaMode)) {
+    throw new Error(`Unknown ELIZA_MODE "${cfg.elizaMode}"`);
   }
   if (!['bearer', 'trusted-header', 'none'].includes(cfg.authMode)) {
     throw new Error(`Unknown AUTH_MODE "${cfg.authMode}"`);

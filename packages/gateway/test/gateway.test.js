@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from '../src/server.js';
 import { loadConfig } from '../src/config.js';
 
-const apps = new Map([['eagle-star', { name: 'Eagle STAR', namespaces: ['fund-accounting/eagle-star', 'shared'] }]]);
+const apps = new Map([['eagle-star', { name: 'Eagle STAR', mnemonic: 'ESR', namespaces: ['fund-accounting/eagle-star', 'shared'] }]]);
 const cfg = { ...loadConfig({ ELIZA_MODE: 'mock', AUTH_MODE: 'bearer', ALLOWED_ORIGINS: 'https://app.example' }), apps, rateLimitPerMin: 1000 };
 const logs = [];
 let server;
@@ -83,4 +83,31 @@ test('trusted-header auth for IIS / Windows-auth fronted ASP.NET apps', async ()
   assert.equal((await fetch(u, { method: 'POST', body })).status, 401);
   assert.equal((await fetch(u, { method: 'POST', body, headers: { 'X-Forwarded-User': 'CORP\\jdoe' } })).status, 200);
   s2.close();
+});
+
+test('app mnemonic, screen and error reach the backend; logs carry the code, not the message', async () => {
+  const r = await post('/v1/chat?stream=false', {
+    appId: 'eagle-star',
+    appMnemonic: 'esr',
+    message: 'why?',
+    context: { screen: 'NAV Dashboard', error: { code: 'ORA-00060', message: 'deadlock on client fund X' }, fundId: 'F1' },
+  });
+  const j = await r.json();
+  assert.equal(r.status, 200);
+  assert.match(j.text, /app `ESR`, screen _NAV Dashboard_, error `ORA-00060`/);
+  const log = logs.filter((l) => l.event === 'chat').at(-1);
+  assert.equal(log.appMnemonic, 'ESR');
+  assert.equal(log.screen, 'NAV Dashboard');
+  assert.equal(log.errorCode, 'ORA-00060');
+  assert.doesNotMatch(JSON.stringify(log), /deadlock/);
+});
+
+test('registry mnemonic is used when the widget sends none; a wrong one is rejected', async () => {
+  const ok = await (await post('/v1/chat?stream=false', { appId: 'eagle-star', message: 'x' })).json();
+  assert.match(ok.text, /app `ESR`/);
+  const bad = await post('/v1/chat', { appId: 'eagle-star', appMnemonic: 'TAP', message: 'x' });
+  assert.equal(bad.status, 403);
+  assert.equal((await bad.json()).code, 'mnemonic_mismatch');
+  assert.equal((await post('/v1/chat', { appId: 'eagle-star', appMnemonic: 'TOOLONG', message: 'x' })).status, 400);
+  assert.equal((await post('/v1/chat', { appId: 'eagle-star', message: 'x', context: [1] })).status, 400);
 });

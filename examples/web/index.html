@@ -3,39 +3,133 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Support Copilot demo host</title>
-  <style>body { font-family: system-ui, sans-serif; margin: 40px; } .inline { height: 480px; width: 380px; border: 1px dashed #ccc; }</style>
+  <title>Eagle STAR (demo host)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; color: #1d2733; background: #f4f6f9; }
+    header { background: #0b2a4a; color: #fff; padding: 14px 24px; display: flex; gap: 24px; align-items: center; }
+    header b { font-size: 18px; }
+    nav a { color: #cfe0f5; margin-right: 16px; text-decoration: none; cursor: pointer; }
+    nav a.active { color: #fff; border-bottom: 2px solid #fff; }
+    main { padding: 24px; max-width: 900px; }
+    .card { background: #fff; border: 1px solid #dde3ea; border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+    .bad { color: #b3261e; font-weight: 600; }
+    .err { border-left: 4px solid #b3261e; }
+    .ask { margin-top: 8px; background: #0b5cad; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
+    select, button { font: inherit; padding: 4px 8px; }
+    code { background: #eef1f5; padding: 1px 4px; border-radius: 3px; }
+  </style>
+
+  <!-- ===== F&IS Support Copilot: paste once into any page, like Intercom ===== -->
+  <script>
+    (function (w, d, s, u) {
+      w.FisCopilot = w.FisCopilot || function () { (w.FisCopilot.q = w.FisCopilot.q || []).push(arguments); };
+      var j = d.createElement(s); j.async = true; j.src = u; d.head.appendChild(j);
+    })(window, document, 'script', 'http://localhost:8787/widget/fis-copilot.js');
+  </script>
+  <!-- ======================================================================== -->
 </head>
 <body>
-  <h1>Eagle STAR (demo host page)</h1>
-  <p>Floating launcher bottom-right. Run <code>npm run dev</code> and open
-     <code>http://localhost:8787/widget/</code>-hosted script from this page.</p>
+  <header>
+    <b id="appName">Eagle STAR</b>
+    <nav id="nav"></nav>
+    <span style="margin-left:auto">App:
+      <select id="app">
+        <option value="eagle-star">Eagle STAR (fund accounting)</option>
+        <option value="ta-portal">TA Portal (transfer agency)</option>
+      </select>
+    </span>
+  </header>
+  <main id="main"></main>
 
-  <!-- Option A: zero-code embed with data attributes -->
-  <!--
-  <script src="http://localhost:8787/widget/fis-copilot.js"
-          data-gateway-url="http://localhost:8787"
-          data-app-id="eagle-star"
-          data-namespace="fund-accounting/eagle-star"
-          data-title="Eagle STAR Support" defer></script>
-  -->
-
-  <!-- Option B: programmatic init with a token and live screen context -->
-  <script src="http://localhost:8787/widget/fis-copilot.js"></script>
   <script>
-    FisCopilot.init({
-      gatewayUrl: 'http://localhost:8787',
-      appId: 'eagle-star',
-      namespace: 'fund-accounting/eagle-star',
-      title: 'Eagle STAR Support',
-      subtitle: 'Runbooks, known issues, FAQs',
-      suggestions: ['Why did the NAV job fail?', 'How do I re-run pricing for one fund?'],
-      // Your SPA already has a token from the IdP:
-      getToken: async () => window.sessionStorage.getItem('access_token'),
-      // Tell the copilot where the user is, so answers are specific:
-      getContext: () => ({ screen: 'NAV Dashboard', fundId: 'F12345', valuationDate: '2026-11-02' }),
-      onEvent: (name, payload) => console.debug('[copilot]', name, payload),
+    var APPS = {
+      'eagle-star': {
+        name: 'Eagle STAR', mnemonic: 'ESR', namespace: 'fund-accounting/eagle-star',
+        errors: {
+          'NAV Dashboard': { code: 'ORA-00060', message: 'deadlock detected while waiting for resource', jobName: 'ES_NAV_ACCRUALS', severity: 'P2' },
+          'Pricing Exceptions': { code: 'PRICED_STALE', message: 'Fund F12345 has stale prices after the overnight load', jobName: 'ES_PRC_LOAD' }
+        },
+        screens: {
+          'NAV Dashboard': '<p>Valuation date <code>2026-11-02</code>. <span class="bad">ES_NAV_MAIN: FAILURE</span> at 01:12 ET in sub-job <code>ES_NAV_ACCRUALS</code> (ORA-00060).</p><p>412 funds in <code>PENDING_CALC</code>.</p>',
+          'Pricing Exceptions': '<p>Fund <code>F12345</code>: <span class="bad">PRICED_STALE</span>, 2,340 positions. Vendor file EMEA arrived 23:40 ET.</p>',
+          'Batch Monitor': '<p><code>ES_PRC_LOAD</code> ✓ · <code>ES_PRC_VALIDATE</code> ✓ · <code>ES_NAV_MAIN</code> ✗ · <code>ES_NAV_RELEASE</code> waiting</p>'
+        },
+        suggestions: ['The NAV batch failed with ORA-00060. What do I do?', 'How do I re-run pricing for one fund?', 'Can I override a price tolerance breach?']
+      },
+      'ta-portal': {
+        name: 'TA Portal', mnemonic: 'TAP', namespace: 'transfer-agency/ta-portal',
+        errors: {
+          'Distributions': { code: 'DRIP_STUCK', message: 'DRIP run D-20261102-07 in PROCESSING for 72 minutes, queue depth 0' },
+          'Access': { code: 'AADSTS50105', message: 'The signed in user is not assigned to a role for the application' }
+        },
+        screens: {
+          'Distributions': '<p>DRIP run <code>D-20261102-07</code>: <span class="bad">PROCESSING</span> for 72 minutes. Queue depth 0.</p>',
+          'Access': '<p>User reports <code>AADSTS50105</code> at login.</p>'
+        },
+        suggestions: ['DRIP run stuck in PROCESSING, queue is empty', 'User gets AADSTS50105 at login', 'What is FUND-1423?']
+      }
+    };
+    var current = { app: 'eagle-star', screen: 'NAV Dashboard' };
+
+    // Live context, read on every question: screen, route and app-specific keys.
+    function screenContext() {
+      return { screen: current.screen, route: '/' + current.app + '/' + current.screen.toLowerCase().replace(/ /g, '-'), valuationDate: '2026-11-02', fundId: current.screen === 'Pricing Exceptions' ? 'F12345' : undefined };
+    }
+
+    // Tell the copilot which error is on screen (or clear it) whenever the screen changes.
+    function syncError() {
+      FisCopilot('error', APPS[current.app].errors[current.screen] || null);
+    }
+
+    function render() {
+      var app = APPS[current.app];
+      document.getElementById('appName').textContent = app.name;
+      document.getElementById('nav').innerHTML = Object.keys(app.screens).map(function (s) {
+        return '<a data-s="' + s + '"' + (s === current.screen ? ' class="active"' : '') + '>' + s + '</a>';
+      }).join('');
+      var err = app.errors[current.screen];
+      document.getElementById('main').innerHTML = '<div class="card' + (err ? ' err' : '') + '"><h2>' + current.screen + '</h2>' + app.screens[current.screen] +
+        (err ? '<button class="ask" id="askErr">Ask support copilot about ' + err.code + '</button>' : '') + '</div>' +
+        '<div class="card">The copilot (bottom-right) receives the app mnemonic <code>' + app.mnemonic + '</code>, this screen and any error shown here. Its header shows what is sent.</div>';
+      var btn = document.getElementById('askErr');
+      if (btn) btn.onclick = function () { FisCopilot('open'); FisCopilot('ask', 'What does ' + err.code + ' mean here and what should I do?'); };
+    }
+
+    function boot() {
+      var app = APPS[current.app];
+      // Queued if the script has not loaded yet; replayed in order once it has.
+      FisCopilot('boot', {
+        gatewayUrl: 'http://localhost:8787',
+        appId: current.app,
+        appMnemonic: app.mnemonic,
+        namespace: app.namespace,
+        title: app.name + ' Support',
+        subtitle: 'Runbooks, Confluence, known JIRA issues',
+        suggestions: app.suggestions,
+        getContext: screenContext,
+        onEvent: function (name, payload) { console.debug('[copilot]', name, payload); }
+      });
+    }
+
+    document.getElementById('nav').addEventListener('click', function (e) {
+      var s = e.target.getAttribute('data-s');
+      if (!s) return;
+      current.screen = s;
+      render();
+      FisCopilot('update', { screen: s }); // SPA route change
+      syncError();
     });
+    document.getElementById('app').addEventListener('change', function (e) {
+      current.app = e.target.value;
+      current.screen = Object.keys(APPS[current.app].screens)[0];
+      render();
+      boot(); // re-boot with a different app id, mnemonic and knowledge namespace
+      syncError();
+    });
+
+    render();
+    boot();
+    syncError();
   </script>
 </body>
 </html>

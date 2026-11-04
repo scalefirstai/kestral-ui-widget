@@ -11,20 +11,22 @@
 <head>
     <meta charset="utf-8" />
     <title>@ViewData["Title"]</title>
-    <environment include="Development">
-        <script src="http://localhost:8787/widget/fis-copilot.js"></script>
-    </environment>
-    <environment exclude="Development">
-        <script src="@Configuration["Copilot:GatewayUrl"]/widget/fis-copilot.js"></script>
-    </environment>
+    @* Loader snippet: async, never blocks the page; calls made before it loads are queued. *@
+    <script>
+        (function (w, d, s, u) {
+            w.FisCopilot = w.FisCopilot || function () { (w.FisCopilot.q = w.FisCopilot.q || []).push(arguments); };
+            var j = d.createElement(s); j.async = true; j.src = u; d.head.appendChild(j);
+        })(window, document, 'script', '@Configuration["Copilot:GatewayUrl"]/widget/fis-copilot.js');
+    </script>
 </head>
 <body>
     @RenderBody()
 
     <script>
-        FisCopilot.init({
+        FisCopilot('boot', {
             gatewayUrl: '@Configuration["Copilot:GatewayUrl"]',
             appId: '@Configuration["Copilot:AppId"]',
+            appMnemonic: '@Configuration["Copilot:AppMnemonic"]',  // 3-character app code, e.g. ESR
             namespace: '@Configuration["Copilot:Namespace"]',
             title: '@Configuration["Copilot:Title"]',
             // Option 2 only:
@@ -36,5 +38,12 @@
             })
         });
     </script>
+    @* Pass a server-side error shown on this page (e.g. from TempData / ModelState) to the copilot. *@
+    @if (ViewData["ErrorCode"] != null)
+    {
+        <script>
+            FisCopilot('error', { code: '@ViewData["ErrorCode"]', message: '@ViewData["ErrorMessage"]', source: 'server' });
+        </script>
+    }
 </body>
 </html>

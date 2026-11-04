@@ -8,5 +8,8 @@
     "start": "node src/server.js",
     "dev": "ELIZA_MODE=mock AUTH_MODE=none node src/server.js",
     "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.4.0"
   }
 }

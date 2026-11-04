@@ -11,7 +11,9 @@ async function getAccessToken() {
   return process.env.COPILOT_DEV_TOKEN || null;
 }
 
-let currentContext = { screen: 'Home' };
+// Update from your app as the user moves around: screen name plus the error on screen, if any.
+let currentContext = { screen: 'Home', error: null };
+// e.g. on a failed job: currentContext = { screen: 'Batch Monitor', error: { code: 'ORA-00060', message, jobName } };
 
 app.whenReady().then(() => {
   ipcMain.handle('fis-copilot:getToken', () => getAccessToken());
@@ -41,6 +43,6 @@ app.whenReady().then(() => {
     'data:text/html,' +
       encodeURIComponent(`<!doctype html><meta charset="utf-8"><h1>Desktop app</h1>
 <script src="${GATEWAY}/widget/fis-copilot.js"></script>
-<script>FisCopilot.init({ gatewayUrl: '${GATEWAY}', appId: 'eagle-star', title: 'Eagle STAR Support' });</script>`),
+<script>FisCopilot.init({ gatewayUrl: '${GATEWAY}', appId: 'eagle-star', appMnemonic: 'ESR', title: 'Eagle STAR Support' });</script>`),
   );
 });
