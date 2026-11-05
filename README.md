@@ -20,6 +20,7 @@ runbooks and FAQs.
 | `packages/widget` | The widget. Plain JS, zero runtime dependencies, Shadow DOM, streaming, safe Markdown, WebView2 + Electron host bridges. Builds to an IIFE (`<script>`) and an ES module (npm). |
 | `packages/gateway` | Reference gateway (Node ≥ 20). `/v1/chat` (SSE or JSON), `/v1/feedback`, serves the widget bundle. Backends: `http` (Eliza, placeholder contract), `claude` (local stand-in), `mock`. |
 | `packages/knowledge-mcp` | Mock knowledge MCP server (stdio, zero dependencies) with `search_concepts`, `get_concept`, `list_links`, scoped by namespace. |
+| `db/oracle` | Oracle data model for chat sessions and long-term memory: tables, `cplt_chat_api` package, optional 23ai vector recall, tests. See `db/oracle/README.md`. |
 | `knowledge/okf` | Sample Open Knowledge Format bundle: runbooks, Confluence pages and JIRA issues as Markdown + YAML frontmatter. Fictional content. |
 | `examples/` | Host integrations: plain web page, ASP.NET `_Layout.cshtml`, WPF WebView2 pane, Electron main/preload, React wrapper. |
 | `docs/PROTOCOL.md` | Widget ⇄ gateway contract and the desktop host bridge. |
